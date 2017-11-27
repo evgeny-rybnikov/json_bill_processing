@@ -3,13 +3,26 @@ package main;
 import lombok.Getter;
 import org.json.simple.JSONObject;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Calendar;
+import java.util.Properties;
 
 /**
  * Created by Evgenii_Rybnikov on 24.08.2017.
  */
 @Getter
 public class Item {
+
+    private static Properties inns = new Properties();
+
+    static {
+        try {
+            inns.load(new FileReader("src/main/resources/inn.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private Calendar date;
     private String userInn;
@@ -29,13 +42,9 @@ public class Item {
 
     @Override
     public String toString() {
-        String magazine;
-        switch (userInn) {
-            case "7826087713": magazine = "Окей"; break;
-            case "7825706086": magazine = "Пятерочка"; break;
-            default:
-                throw new RuntimeException("Unknown userInn: " + userInn);
-        }
+        if (!inns.containsKey(userInn)) throw new RuntimeException("Unknown userInn: " + userInn);
+        String magazine = inns.getProperty(userInn);
         return String.format("%td.%1$tm.%1$ty %1$tH:%1$tM\t\"%s\"\t%.3f\t%.4f\t%.3f\t%s", date, name, price, quantity, sum, magazine);
     }
+
 }

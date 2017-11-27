@@ -1,21 +1,23 @@
 package main;
 
+import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * Created by Evgenii_Rybnikov on 23.08.2017.
  */
 public class Main {
+
+    private static JSONParser parser = new JSONParser();
 
     private static final String ROOT_PATH = "D:/bills/json";
     final static Set<String> KEY_SET = new HashSet<>(
@@ -53,41 +55,72 @@ public class Main {
             )
     );
 
-
     public static void main(String[] args) {
         File[] files = new File(ROOT_PATH).listFiles();
         if (files.length == 1) throw new RuntimeException("No files found in " + ROOT_PATH);
         Arrays.stream(files)
                 .filter(File::isFile)
                 .filter(x -> x.getName().matches(".+\\.json"))
-                .map(x -> getItems(x.getAbsolutePath()))
+                .map(File::getAbsolutePath)
+                .map(Main::toString)
+                .map(Main::getItems)
                 .flatMap(List::stream)
                 .forEach(System.out::println);
     }
 
-    private static List<Item> getItems(String fileName) {
-
-        JSONParser parser = new JSONParser();
-        List<Item> list = null;
+    private static List<Item> getItems(String json) {
+        List<JSONObject> jsons;
         try {
-            JSONObject jsonObject = (JSONObject) parser.parse(new FileReader(fileName));
-
-            if (!isCorrect(jsonObject))
-                throw new RuntimeException(String.format("File (%s) doesn't match the format", fileName));
-
-            Calendar date = getDate(jsonObject);
-            String userInn = (String) jsonObject.get("userInn");
-
-            JSONArray items = (JSONArray) jsonObject.get("items");
-            list = (List<Item>) StreamSupport.stream(items.spliterator(), false)
-//            list = (List<Item>) items.stream()
-                    .map(o -> new Item(date, userInn, (JSONObject) o))
-                    .collect(Collectors.toList());
-
-        } catch (ParseException | IOException e) {
-            e.printStackTrace();
+            jsons = toJsonObject(json);
+        } catch (ParseException e) {
+            throw new RuntimeException("Error parsing json", e);
         }
-        return list;
+        jsons.forEach(j -> {
+            if (!isCorrect(j))
+                throw new RuntimeException(String.format("JSON doesn't match the format"));
+        });
+
+        assert(jsons.size() != 0);
+        List<Pair<JSONObject, JSONObject>> pairs = new ArrayList<>(jsons.size() * jsons.get(0).size());
+        for (JSONObject j : jsons) {
+            JSONArray array = (JSONArray) j.get("items");
+            for (Object o : array) {
+                JSONObject i = (JSONObject) o;
+                pairs.add(new Pair<>(j, i));
+            }
+        }
+
+        List<Item> itemList = new ArrayList<>(pairs.size());
+        for (Pair<JSONObject, JSONObject> p : pairs) {
+            Calendar date = getDate(p.getKey());
+            String userInn = (String) p.getKey().get("userInn");
+            itemList.add(new Item(date, userInn, p.getValue()));
+        }
+        return itemList;
+    }
+
+    private static List<JSONObject> toJsonObject(String json) throws ParseException {
+        Object obj = parser.parse(json);
+        if (obj instanceof JSONObject) {
+            return Arrays.asList((JSONObject) obj);
+        } else if (obj instanceof JSONArray) {
+            JSONArray jsonArray = (JSONArray) obj;
+            return jsonArray.subList(0, jsonArray.size());
+        } else {
+            throw new RuntimeException("Unknown JSON object type");
+        }
+    }
+
+    private static boolean isCorrect(JSONObject jsonObject) {
+        return jsonObject.keySet().containsAll(KEY_SET);
+    }
+
+    public static String toString(String path) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(path)), "utf-8");
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading file " + path, e);
+        }
     }
 
     private static Calendar getDate(JSONObject jsonObject) {
@@ -96,8 +129,16 @@ public class Main {
         date.setTimeZone(TimeZone.getTimeZone("GMT"));
         return date;
     }
-
-    private static boolean isCorrect(JSONObject jsonObject) {
-        return jsonObject.keySet().containsAll(KEY_SET);
-    }
 }
+// Don't want to work
+//        List<Item> itemList = jsons.stream()
+//                .map(j -> new Pair<>(j, (JSONArray) j.get("items")))
+//                .flatMap(p -> p.getValue().stream()
+//                        .flatMap(a -> ((JSONArray) a).stream())
+//                        .map(o -> new Pair<>(p.getKey(), (JSONObject) o)))
+//                .map(p -> {
+//                    JSONObject key = ((Pair<JSONObject, JSONObject>) p).getKey();
+//                    JSONObject value = ((Pair<JSONObject, JSONObject>) p).getValue();
+//                    return new Item(getDate(key), (String) key.get("userInn"), value);
+//                })
+//                .collect(Collectors.toList());
