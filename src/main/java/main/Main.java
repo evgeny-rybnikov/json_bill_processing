@@ -20,7 +20,7 @@ public class Main {
     private static JSONParser parser = new JSONParser();
 
     private static final String ROOT_PATH = "D:/bills/json";
-    final static Set<String> KEY_SET = new HashSet<>(
+    private final static Set<String> KEY_SET = new HashSet<>(
             Arrays.asList(
                     "dateTime",
                     "ndsCalculated18",
@@ -77,7 +77,7 @@ public class Main {
         }
         jsons.forEach(j -> {
             if (!isCorrect(j))
-                throw new RuntimeException(String.format("JSON doesn't match the format"));
+                throw new RuntimeException("JSON doesn't match the format");
         });
 
         assert(jsons.size() != 0);
@@ -130,16 +130,3 @@ public class Main {
         return date;
     }
 }
-
-// Doesn't want to work
-//        List<Item> itemList = jsons.stream()
-//                .map(j -> new Pair<>(j, (JSONArray) j.get("items")))
-//                .flatMap(p -> p.getValue().stream()
-//                        .flatMap(a -> ((JSONArray) a).stream())
-//                        .map(o -> new Pair<>(p.getKey(), (JSONObject) o)))
-//                .map(p -> {
-//                    JSONObject key = ((Pair<JSONObject, JSONObject>) p).getKey();
-//                    JSONObject value = ((Pair<JSONObject, JSONObject>) p).getValue();
-//                    return new Item(getDate(key), (String) key.get("userInn"), value);
-//                })
-//                .collect(Collectors.toList());
