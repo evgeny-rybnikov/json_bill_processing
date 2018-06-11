@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
+import static org.junit.Assert.assertTrue;
+
 public class TestJsonParser {
 
     private static JSONParser parser = new JSONParser();
@@ -31,6 +33,7 @@ public class TestJsonParser {
     public void testPropertiesreading() throws IOException {
         Properties props = new Properties();
         props.load(new FileReader("src/main/resources/inn.properties"));
-        System.out.println(props.getProperty("7825706086"));
+        assertTrue(props.containsKey("7825706086"));
+        //assertTrue(props.getProperty("7825706086").equals("Пятерочка"));
     }
 }
