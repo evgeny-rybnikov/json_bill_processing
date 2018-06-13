@@ -31,7 +31,7 @@ public class Item {
     private double price;
     private double quantity;
 
-    public Item(Calendar date, String userInn, JSONObject j) {
+    Item(Calendar date, String userInn, JSONObject j) {
         this.date = date;
         this.userInn = userInn;
         this.sum = (double) (Long) j.get("sum") / 100;
@@ -44,7 +44,8 @@ public class Item {
     public String toString() {
         if (!inns.containsKey(userInn)) throw new RuntimeException("Unknown userInn: " + userInn);
         String magazine = inns.getProperty(userInn);
-        return String.format("%td.%1$tm.%1$ty %1$tH:%1$tM\t\"%s\"\t%.3f\t%.4f\t%.3f\t%s", date, name, price, quantity, sum, magazine);
+        return String.format("%td.%1$tm.%1$ty %1$tH:%1$tM\t\"%s\"\t%.3f\t%.4f\t%.3f\t%s",
+                date, name, price, quantity, sum, magazine);
     }
 
 }
