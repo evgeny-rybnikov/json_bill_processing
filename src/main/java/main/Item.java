@@ -40,6 +40,10 @@ public class Item {
         this.quantity = (double) j.get("quantity");
     }
 
+    public boolean hasUnknownInn() {
+        return !inns.containsKey(userInn);
+    }
+
     @Override
     public String toString() {
         if (!inns.containsKey(userInn)) throw new RuntimeException("Unknown userInn: " + userInn);

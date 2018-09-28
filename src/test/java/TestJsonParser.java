@@ -17,16 +17,18 @@ public class TestJsonParser {
     private static JSONParser parser = new JSONParser();
 
     @Test
-    public void testParsingSingleJsonFile() throws IOException, ParseException {
-        String text = Main.toString("src/test/resources/23_08_2017_02_20_46-1379275764.json");
+    public void testParsingSingleJsonFile() throws ParseException {
+        String text = Main.fileToString("src/test/resources/23_08_2017_02_20_46-1379275764.json");
         JSONObject jsonObject = (JSONObject) parser.parse(text);
+        assertTrue(!jsonObject.isEmpty());
     }
 
     @Test
     public void testParseArray() throws IOException, ParseException {
-        String text = Main.toString("src/test/resources/F1FE052F-BD8B-48FC-AF2D-66D567835DA2.json");
+        String text = Main.fileToString("src/test/resources/F1FE052F-BD8B-48FC-AF2D-66D567835DA2.json");
         JSONArray jsonArray = (JSONArray) parser.parse(text);
         List list = jsonArray.subList(0, jsonArray.size());
+        assertTrue(!list.isEmpty());
     }
 
     @Test
@@ -34,6 +36,5 @@ public class TestJsonParser {
         Properties props = new Properties();
         props.load(new FileReader("src/main/resources/inn.properties"));
         assertTrue(props.containsKey("7825706086"));
-        //assertTrue(props.getProperty("7825706086").equals("Пятерочка"));
     }
 }

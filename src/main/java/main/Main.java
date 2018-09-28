@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Evgenii_Rybnikov on 23.08.2017.
@@ -57,15 +59,30 @@ public class Main {
 
     public static void main(String[] args) {
         File[] files = new File(ROOT_PATH).listFiles();
-        if (files.length == 1) throw new RuntimeException("No files found in " + ROOT_PATH);
-        Arrays.stream(files)
+        if (files != null && files.length == 1) {
+            throw new RuntimeException("No files found in " + ROOT_PATH);
+        }
+
+        List<Item> itemsWithUnknownInn = readFilesAndConvertToItem(files)
+                .filter(Item::hasUnknownInn)
+                .collect(Collectors.toList());
+
+        if (itemsWithUnknownInn.size() > 0) {
+            System.out.println("Please update inn.properties with next inns:");
+            itemsWithUnknownInn.stream().map(item -> new Pair(item.getUserInn(), item.getName())).distinct().forEach(System.out::println);
+        } else {
+            readFilesAndConvertToItem(files).forEach(System.out::println);
+        }
+    }
+
+    private static Stream<Item> readFilesAndConvertToItem(File[] files) {
+        return Arrays.stream(files)
                 .filter(File::isFile)
                 .filter(x -> x.getName().matches(".+\\.json"))
                 .map(File::getAbsolutePath)
-                .map(Main::toString)
+                .map(Main::fileToString)
                 .map(Main::getItems)
-                .flatMap(List::stream)
-                .forEach(System.out::println);
+                .flatMap(List::stream);
     }
 
     private static List<Item> getItems(String json) {
@@ -80,7 +97,7 @@ public class Main {
                 throw new RuntimeException("JSON doesn't match the format");
         });
 
-        assert(jsons.size() != 0);
+        assert (jsons.size() != 0);
         List<Pair<JSONObject, JSONObject>> pairs = new ArrayList<>(jsons.size() * jsons.get(0).size());
         for (JSONObject j : jsons) {
             JSONArray array = (JSONArray) j.get("items");
@@ -115,7 +132,7 @@ public class Main {
         return jsonObject.keySet().containsAll(KEY_SET);
     }
 
-    public static String toString(String path) {
+    public static String fileToString(String path) {
         try {
             return new String(Files.readAllBytes(Paths.get(path)), "utf-8");
         } catch (IOException e) {
